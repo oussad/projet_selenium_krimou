@@ -24,7 +24,8 @@ nombres_lignes=driver.find_elements(By.XPATH,'//div[@class="oxd-table-body"]/div
 for data in range(1,len(nombres_lignes)+1):
     data1=driver.find_element(By.XPATH,'//div[@class="oxd-table-body"]/div[" + str(data) + "]').text
     print(data1)
-    data2=driver.find_element(By.XPATH,'//div[@class="oxd-table-body"]/div[" + str(data) + "]').text
-
+    data2=driver.find_element(By.XPATH,'//div[@class="oxd-table-body"]/div[" + str(data) + "]//div[5]').text
+    print('*******')
+    print(data2)
 print(len(nombres_lignes))
 driver.close()
