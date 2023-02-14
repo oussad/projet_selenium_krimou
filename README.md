@@ -1,167 +1,282 @@
-# Selenium-python but lighter: Helium
+# Robot Framework in Docker, with Firefox and Chrome
 
-[Selenium-python](https://selenium-python.readthedocs.io/) is great for web
-automation. Helium makes it easier to use. For example:
+## What is it?
 
-![Helium Demo](docs/helium-demo.gif)
+This project consists of a Docker image containing a Robot Framework installation.
 
-Under the hood, Helium forwards each call to Selenium. The difference is that
-Helium's API is much more high-level. In Selenium, you need to use HTML IDs,
-XPaths and CSS selectors to identify web page elements. Helium on the other hand
-lets you refer to elements by user-visible labels. As a result, Helium scripts
-are typically 30-50% shorter than similar Selenium scripts. What's more, they
-are easier to read and more stable with respect to changes in the underlying web
-page.
+This installation also contains Firefox, Chrome and the Selenium library for Robot Framework. The test cases and reports should be mounted as volumes.
 
-Because Helium is simply a wrapper around Selenium, you can freely mix the two
-libraries. For example:
+## Versioning
 
-```python
-# A Helium function:
-driver = start_chrome()
-# A Selenium API:
-driver.execute_script("alert('Hi!');")
-```
+The versioning of this image follows the one of Robot Framework:
 
-So in other words, you don't lose anything by using Helium over pure Selenium.
+* Major version matches the one of Robot Framework
+* Minor and patch versions are specific to this project (allows to update the versions of the other dependencies)
 
-In addition to its more high-level API, Helium simplifies further tasks that are
-traditionally painful in Selenium:
+The versions used are:
 
-- **Web driver management:** Helium ships with its own copies of ChromeDriver
-  and geckodriver so you don't need to download and put them on your PATH.
-- **iFrames:** Unlike Selenium, Helium lets you interact with elements inside
-  nested iFrames, without having to first "switch to" the iFrame.
-- **Window management.** Helium notices when popups open or close and focuses /
-  defocuses them like a user would. You can also easily switch to a window by
-  (parts of) its title. No more having to iterate over Selenium window handles.
-- **Implicit waits.** By default, if you try click on an element with Selenium
-  and that element is not yet present on the page, your script fails. Helium by
-  default waits up to 10 seconds for the element to appear.
-- **Explicit waits.** Helium gives you a much nicer API for waiting for a
-  condition on the web page to become true. For example: To wait for an element
-  to appear in Selenium, you would write:
-  ```python
-  element = WebDriverWait(driver, 10).until(
-      EC.presence_of_element_located((By.ID, "myDynamicElement"))
-  )
-  ```
-  With Helium, you can write:
-  ```python
-  wait_until(Button('Download').exists)
-  ```
+* [Robot Framework](https://github.com/robotframework/robotframework) 5.0.1
+* [Robot Framework Browser Library](https://github.com/MarketSquare/robotframework-browser) 14.0.0
+* [Robot Framework DatabaseLibrary](https://github.com/franz-see/Robotframework-Database-Library) 1.2.4
+* [Robot Framework Datadriver](https://github.com/Snooz82/robotframework-datadriver) 1.6.0
+* [Robot Framework DateTimeTZ](https://github.com/testautomation/DateTimeTZ) 1.0.6
+* [Robot Framework Faker](https://github.com/guykisel/robotframework-faker) 5.0.0
+* [Robot Framework FTPLibrary](https://github.com/kowalpy/Robot-Framework-FTP-Library) 1.9
+* [Robot Framework IMAPLibrary 2](https://pypi.org/project/robotframework-imaplibrary2/) 0.4.5
+* [Robot Framework Pabot](https://github.com/mkorpela/pabot) 2.7.0
+* [Robot Framework Requests](https://github.com/bulkan/robotframework-requests) 0.9.3
+* [Robot Framework SeleniumLibrary](https://github.com/robotframework/SeleniumLibrary) 6.0.0
+* [Robot Framework SSHLibrary](https://github.com/robotframework/SSHLibrary) 3.8.0
+* [Axe Selenium Library](https://github.com/mozilla-services/axe-selenium-python) 2.1.6
+* Firefox 104.0
+* Chromium 103.0
+* [Amazon AWS CLI](https://pypi.org/project/awscli/) 1.25.81
 
-## Installation
+As stated by [the official GitHub project](https://github.com/robotframework/Selenium2Library), starting from version 3.0, Selenium2Library is renamed to SeleniumLibrary and this project exists mainly to help with transitioning. The Selenium2Library 3.0.0 is also the last release and for new releases, please look at the [SeleniumLibrary](https://github.com/robotframework/SeleniumLibrary) project.
 
-To get started with Helium, you need Python 3 and Chrome or Firefox.
+## Running the container
 
-If you already know Python, then the following command should be all you need:
+This container can be run using the following command:
 
-```bash
-pip install helium
-```
+    docker run \
+        -v <local path to the reports' folder>:/opt/robotframework/reports:Z \
+        -v <local path to the test suites' folder>:/opt/robotframework/tests:Z \
+        ppodgorsek/robot-framework:<version>
 
-Otherwise - Hi! I would recommend you create a virtual environment in the
-current directory. Any libraries you download (such as Helium) will be placed
-there. Enter the following into a command prompt:
+### Switching browsers
 
-```bash
-python3 -m venv venv
-```
+Browsers can be easily switched. It is recommended to define `${BROWSER} %{BROWSER}` in your Robot variables and to use `${BROWSER}` in your test cases. This allows to set the browser in a single place if needed.
 
-This creates a virtual environment in the `venv` directory. To activate it:
+When running your tests, simply add `-e BROWSER=chrome` or `-e BROWSER=firefox` to the run command.
 
-```bash
-# On Mac/Linux:
-source venv/bin/activate
-# On Windows:
-call venv\scripts\activate.bat
-```
+### Changing the container's screen resolution
 
-Then, install Helium using `pip`:
+It is possible to define the settings of the virtual screen in which the browser is run by changing several environment variables:
 
-```bash
-python -m pip install helium
-```
+* `SCREEN_COLOUR_DEPTH` (default: 24)
+* `SCREEN_HEIGHT` (default: 1080)
+* `SCREEN_WIDTH` (default: 1920)
 
-Now enter `python` into the command prompt and (for instance) the commands in
-the animation at the top of this page (`from helium import *`, ...).
+### Changing the container's tests and reports directories
 
-## Your first script
+It is possible to use different directories to read tests from and to generate reports to. This is useful when using a complex test file structure. To change the defaults, set the following environment variables:
 
-I've compiled a [cheatsheet](docs/cheatsheet.md) that quickly teaches you all
-you need to know to be productive with Helium.
+* `ROBOT_REPORTS_DIR` (default: /opt/robotframework/reports)
+* `ROBOT_TESTS_DIR` (default: /opt/robotframework/tests)
 
-## API Documentation
+### Parallelisation
 
-The documentation for this project can be found
-[here](https://selenium-python-helium.readthedocs.io/en/latest/).
+It is possible to parallelise the execution of your test suites. Simply define the `ROBOT_THREADS` environment variable, for example:
 
-## Status of this project
+    docker run \
+        -e ROBOT_THREADS=4 \
+        ppodgorsek/robot-framework:latest
 
-I have too little spare time to maintain this project for free. If you'd like
-my help, please go to my [web site](http://herrmann.io) to ask about my
-consulting rates. Otherwise, unless it is very easy for me, I will usually not
-respond to emails or issues on the issue tracker. I will however accept and
-merge PRs. So if you add some functionality to Helium that may be useful for
-others, do share it with us by creating a Pull Request. For instructions, please
-see [Contributing](#Contributing) below.
+By default, there is no parallelisation.
 
-## How you can help
+#### Parallelisation options
 
-I find Helium extremely useful in my own projects and feel it should be more
-widely known. Here's how you can help with this:
+When using parallelisation, it is possible to pass additional [pabot options](https://github.com/mkorpela/pabot#command-line-options), such as `--testlevelsplit`, `--argumentfile`, `--ordering`, etc. These can be passed by using the `PABOT_OPTIONS` environment variable, for example:
 
-- Star this project on GitHub.
-- Tell your friends and colleagues about it.
-- [Share it on Twitter with one click](https://twitter.com/intent/tweet?text=I%20find%20Helium%20very%20useful%20for%20web%20automation%20with%20Python%3A%20https%3A//github.com/mherrmann/helium)
-- Share it on other social media
-- Write a blog post about Helium.
+    docker run \
+        -e ROBOT_THREADS=4 \
+        -e PABOT_OPTIONS="--testlevelsplit" \
+        ppodgorsek/robot-framework:latest
 
-With this, I think we can eventually make Helium the de-facto standard for web
-automation in Python.
+### Passing additional options
 
-## Contributing
+RobotFramework supports many options such as `--exclude`, `--variable`, `--loglevel`, etc. These can be passed by using the `ROBOT_OPTIONS` environment variable, for example:
 
-Pull Requests are very welcome. Please follow the same coding conventions as the
-rest of the code, in particular the use of tabs over spaces. Also, read through my
-[PR guidelines](https://gist.github.com/mherrmann/5ce21814789152c17abd91c0b3eaadca).
-Doing this will save you (and me) unnecessary effort.
+    docker run \
+        -e ROBOT_OPTIONS="--loglevel DEBUG" \
+        ppodgorsek/robot-framework:latest
 
-Before you submit a PR, ensure that the tests still work:
+### Testing emails
 
-```bash
-pip install -Ur requirements/test.txt
-python setup.py test
-```
+This project includes the IMAP library which allows Robot Framework to connect to email servers.
 
-This runs the tests against Chrome. To run them against Firefox, set the
-environment variable `TEST_BROWSER` to `firefox`. Eg. on Mac/Linux:
+A suggestion to automate email testing is to run a [Mailcatcher instance in Docker which allows IMAP connections](https://github.com/estelora/docker-mailcatcher-imap). This will ensure emails are discarded once the tests have been run.
 
-```bash
-TEST_BROWSER=firefox python setup.py test
-```
+### Dealing with Datetimes and Timezones
 
-On Windows:
+This project is meant to allow your tests to run anywhere. Sometimes that can be in a different timezone than your local one or of the location under test. To help solve such issues, this image includes the [DateTimeTZ Library](https://testautomation.github.io/DateTimeTZ/doc/DateTimeTZ.html).
 
-```bash
-set TEST_BROWSER=firefox
-python setup.py test
-```
+To set the timezone used inside the Docker image, you can set the `TZ` environment variable:
 
-If you do add new functionality, you should also add tests for it. Please see
-the [`tests/`](tests) directory for what this might look like.
+    docker run \
+        -e TZ=America/New_York \
+        ppodgorsek/robot-framework:latest
 
-## History
+## Security consideration
 
-I (Michael Herrmann) originally developed Helium in 2013 for a Polish IT startup
-called BugFree software. (It could be that you have seen Helium before at
-https://heliumhq.com.) We shut down the company at the end of 2019 and I felt it
-would be a shame if Helium simply disappeared from the face of the earth. So I
-invested some time to modernize it and bring it into a state suitable for open
-source.
+By default, containers are implicitly run using `--user=1000:1000`, please remember to adjust that command-line setting accordingly, for example:
 
-Helium used to be available for both Java and Python. But because I now only
-use it from Python, I didn't have time to bring the Java implementation up to
-speed as well. Similarly for Internet Explorer: Helium used to support it, but
-since I have no need for it, I removed the (probably broken) old implementation.
+    docker run \
+        --user=1001:1001 \
+        ppodgorsek/robot-framework:latest
+
+Remember that that UID/GID should be allowed to access the mounted volumes in order to read the test suites and to write the output.
+
+Additionally, it is possible to rely on user namespaces to further secure the execution. This is well described in the official container documentation:
+
+* Docker: [Introduction to User Namespaces in Docker Engine](https://success.docker.com/article/introduction-to-user-namespaces-in-docker-engine)
+* Podman: [Running rootless Podman as a non-root user](https://www.redhat.com/sysadmin/rootless-podman-makes-sense)
+
+This is a good security practice to make sure containers cannot perform unwanted changes on the host. In that sense, Podman is probably well ahead of Docker by not relying on a root daemon to run its containers.
+
+## Continuous integration
+
+It is possible to run the project from within a Jenkins pipeline by relying on the shell command line directly:
+
+    pipeline {
+        agent any
+        stages {
+            stage('Functional regression tests') {
+                steps {
+                    sh "docker run --shm-size=1g -e BROWSER=firefox -v $WORKSPACE/robot-tests:/opt/robotframework/tests:Z -v $WORKSPACE/robot-reports:/opt/robotframework/reports:Z ppodgorsek/robot-framework:latest"
+                }
+            }
+        }
+    }
+
+The pipeline stage can also rely on a Docker agent, as shown in the example below:
+
+    pipeline {
+        agent none
+        stages {
+            stage('Functional regression tests') {
+                agent { docker {
+                    image 'ppodgorsek/robot-framework:latest'
+                    args '--shm-size=1g -u root' }
+                }
+                environment {
+                    BROWSER = 'firefox'
+                    ROBOT_TESTS_DIR = "$WORKSPACE/robot-tests"
+                    ROBOT_REPORTS_DIR = "$WORKSPACE/robot-reports"
+                }
+                steps {
+                    sh '''
+                        /opt/robotframework/bin/run-tests-in-virtual-screen.sh
+                    '''
+                }
+            }
+        }
+    }
+
+### Defining a test run ID
+
+When relying on Continuous Integration tools, it can be useful to define a test run ID such as the build number or branch name to avoid overwriting consecutive execution reports.
+
+For that purpose, the `ROBOT_TEST_RUN_ID` variable was introduced:
+* If the test run ID is empty, the reports folder will be: `${ROBOT_REPORTS_DIR}/`
+* If the test run ID was provided, the reports folder will be: `${ROBOT_REPORTS_DIR}/${ROBOT_TEST_RUN_ID}/`
+
+It can simply be passed during the execution, such as:
+
+    docker run \
+        -e ROBOT_TEST_RUN_ID="feature/branch-name" \
+        ppodgorsek/robot-framework:latest
+
+By default, the test run ID is empty.
+
+### Upload test reports to an AWS S3 bucket
+
+To upload the report of a test run to an S3 bucket, you need to define the following environment variables:
+    
+    docker run \
+        -e AWS_ACCESS_KEY_ID=<your AWS key> \
+        -e AWS_SECRET_ACCESS_KEY=<your AWS secret> \
+        -e AWS_DEFAULT_REGION=<your AWS region e.g. eu-central-1> \
+        -e AWS_BUCKET_NAME=<name of your S3 bucket> \
+        ppodgorsek/robot-framework:latest
+
+## Testing this project
+
+Not convinced yet? Simple tests have been prepared in the `test/` folder, you can run them using the following commands:
+
+    # Using Chromium
+    docker run \
+        -v `pwd`/reports:/opt/robotframework/reports:Z \
+        -v `pwd`/test:/opt/robotframework/tests:Z \
+        -e BROWSER=chrome \
+        ppodgorsek/robot-framework:latest
+
+    # Using Firefox
+    docker run \
+        -v `pwd`/reports:/opt/robotframework/reports:Z \
+        -v `pwd`/test:/opt/robotframework/tests:Z \
+        -e BROWSER=firefox \
+        ppodgorsek/robot-framework:latest
+
+For Windows users who use **PowerShell**, the commands are slightly different:
+
+    # Using Chromium
+    docker run \
+        -v ${PWD}/reports:/opt/robotframework/reports:Z \
+        -v ${PWD}/test:/opt/robotframework/tests:Z \
+        -e BROWSER=chrome \
+        ppodgorsek/robot-framework:latest
+
+    # Using Firefox
+    docker run \
+        -v ${PWD}/reports:/opt/robotframework/reports:Z \
+        -v ${PWD}/test:/opt/robotframework/tests:Z \
+        -e BROWSER=firefox \
+        ppodgorsek/robot-framework:latest
+
+Screenshots of the results will be available in the `reports/` folder.
+
+## Troubleshooting
+
+### Chromium is crashing
+
+Chrome drivers might crash due to the small size of `/dev/shm` in the docker container:
+> UnknownError: session deleted because of page crash
+
+This is [a known bug of Chromium](https://bugs.chromium.org/p/chromium/issues/detail?id=715363).
+
+To avoid this error, please change the shm size when starting the container by adding the following parameter: `--shm-size=1g` (or any other size more suited to your tests)
+
+### Accessing the logs
+
+In case further investigation is required, the logs can be accessed by mounting their folder. Simply add the following parameter to your `run` command:
+
+* Linux/Mac: ``-v `pwd`/logs:/var/log:Z``
+* Windows: ``-v ${PWD}/logs:/var/log:Z``
+
+Chromium allows to set additional environment properties, which can be useful when debugging:
+
+* `webdriver.chrome.verboseLogging=true`: enables the verbose logging mode
+* `webdriver.chrome.logfile=/path/to/chromedriver.log`: sets the path to Chromium's log file
+
+### Error: Suite contains no tests
+
+When running tests, an unexpected error sometimes occurs:
+
+> [Error] Suite contains no tests.
+
+There are two main causes to this:
+* Either the test folder is not the right one,
+* Or the permissions on the test folder/test files are too restrictive.
+
+As there can sometimes be issues as to where the tests are run from, make sure the correct folder is used by trying the following actions:
+* Use a full path to the folder instead of a relative one,
+* Replace any`` `pwd` ``or `${PWD}` by the full path to the folder.
+
+It is also important to check if Robot Framework is allowed to access the resources it needs, i.e.:
+* The folder where the tests are located,
+* The test files themselves.
+
+### Database tests are failing in spite of the DatabaseLibrary being present
+
+As per their official project page, the [Robot Framework DatabaseLibrary](https://github.com/franz-see/Robotframework-Database-Library) contains utilities meant for Robot Framework's usage. This can allow you to query your database after an action has been made to verify the results. This is compatible with any Database API Specification 2.0 module.
+
+It is anyway mandatory to extend the container image to install the specific database module relevant to your tests, such as:
+* [MS SQL](https://pymssql.readthedocs.io/en/latest/intro.html): `pip install pymssql`
+* [MySQL](https://dev.mysql.com/downloads/connector/python/): `pip install pymysql`
+* [Oracle](https://www.oracle.com/uk/database/technologies/appdev/python.html): `pip install py2oracle`
+* [PostgreSQL](http://pybrary.net/pg8000/index.html): `pip install pg8000`
+
+## Please contribute!
+
+Have you found an issue? Do you have an idea for an improvement? Feel free to contribute by submitting it [on the GitHub project](https://github.com/ppodgorsek/docker-robot-framework/issues).
